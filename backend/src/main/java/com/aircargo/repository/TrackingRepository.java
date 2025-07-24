@@ -11,16 +11,8 @@ import java.util.List;
 public interface TrackingRepository extends JpaRepository<Tracking, String> {
 
     List<Tracking> findByCargoIdOrderByTimestampDesc(String cargoId);
-    
-    List<Tracking> findByCargoId(String cargoId);
-    
+
     List<Tracking> findByStatus(String status);
-    
-    List<Tracking> findByLocation(String location);
-    
-    List<Tracking> findByHandlerId(String handlerId);
-    
-    List<Tracking> findByTimestampBetween(LocalDateTime startTime, LocalDateTime endTime);
-    
-    List<Tracking> findByCargoIdAndTimestampBetween(String cargoId, LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Tracking> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
 } 

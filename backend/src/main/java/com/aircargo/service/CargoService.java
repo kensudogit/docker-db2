@@ -1,18 +1,18 @@
 package com.aircargo.service;
 
-import com.aircargo.entity.Cargo;
-import com.aircargo.entity.Inbound;
-import com.aircargo.entity.Outbound;
-import com.aircargo.entity.Tracking;
 import com.aircargo.repository.CargoRepository;
 import com.aircargo.repository.InboundRepository;
 import com.aircargo.repository.OutboundRepository;
 import com.aircargo.repository.TrackingRepository;
+import com.aircargo.entity.Cargo;
+import com.aircargo.entity.Inbound;
+import com.aircargo.entity.Outbound;
+import com.aircargo.entity.Tracking;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +20,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 @Transactional
 public class CargoService {
 
@@ -29,56 +28,79 @@ public class CargoService {
     private final OutboundRepository outboundRepository;
     private final TrackingRepository trackingRepository;
 
-    // 貨物関連の操作
-    public List<Cargo> getAllCargo() {
-        return cargoRepository.findAllOrderByCreatedDateDesc();
+    public List<Cargo> getAllCargos() {
+        return cargoRepository.findAll();
     }
 
     public Optional<Cargo> getCargoById(String cargoId) {
         return cargoRepository.findById(cargoId);
     }
 
+    public List<Cargo> getCargosByFlightNumber(String flightNumber) {
+        return cargoRepository.findByFlightNumber(flightNumber);
+    }
+
+    public List<Cargo> getCargosByStatus(String status) {
+        return cargoRepository.findByStatus(status);
+    }
+
+    public List<Cargo> searchCargosByShipperName(String shipperName) {
+        return cargoRepository.findByShipperNameContainingIgnoreCase(shipperName);
+    }
+
+    public List<Cargo> searchCargosByConsigneeName(String consigneeName) {
+        return cargoRepository.findByConsigneeNameContainingIgnoreCase(consigneeName);
+    }
+
     public Cargo createCargo(Cargo cargo) {
-        if (cargo.getCargoId() == null || cargo.getCargoId().isEmpty()) {
-            cargo.setCargoId("CARGO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
+        // 貨物IDを生成
+        String cargoId = "C" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        cargo.setCargoId(cargoId);
+        cargo.setStatus("PENDING");
         cargo.setCreatedDate(LocalDateTime.now());
         cargo.setUpdatedDate(LocalDateTime.now());
+        cargo.setVersion(1);
+
         return cargoRepository.save(cargo);
     }
 
     public Cargo updateCargo(String cargoId, Cargo cargoDetails) {
-        return cargoRepository.findById(cargoId)
-                .map(cargo -> {
-                    cargo.setFlightNumber(cargoDetails.getFlightNumber());
-                    cargo.setOriginAirport(cargoDetails.getOriginAirport());
-                    cargo.setDestinationAirport(cargoDetails.getDestinationAirport());
-                    cargo.setCargoType(cargoDetails.getCargoType());
-                    cargo.setWeight(cargoDetails.getWeight());
-                    cargo.setVolume(cargoDetails.getVolume());
-                    cargo.setStatus(cargoDetails.getStatus());
-                    cargo.setShipperName(cargoDetails.getShipperName());
-                    cargo.setConsigneeName(cargoDetails.getConsigneeName());
-                    cargo.setUpdatedDate(LocalDateTime.now());
-                    return cargoRepository.save(cargo);
-                })
-                .orElseThrow(() -> new RuntimeException("貨物が見つかりません: " + cargoId));
+        Cargo existingCargo = cargoRepository.findById(cargoId)
+            .orElseThrow(() -> new RuntimeException("貨物が見つかりません: " + cargoId));
+
+        // 更新可能なフィールドのみ更新
+        existingCargo.setFlightNumber(cargoDetails.getFlightNumber());
+        existingCargo.setOriginAirport(cargoDetails.getOriginAirport());
+        existingCargo.setDestinationAirport(cargoDetails.getDestinationAirport());
+        existingCargo.setCargoType(cargoDetails.getCargoType());
+        existingCargo.setWeight(cargoDetails.getWeight());
+        existingCargo.setVolume(cargoDetails.getVolume());
+        existingCargo.setStatus(cargoDetails.getStatus());
+        existingCargo.setShipperName(cargoDetails.getShipperName());
+        existingCargo.setConsigneeName(cargoDetails.getConsigneeName());
+        existingCargo.setUpdatedDate(LocalDateTime.now());
+
+        return cargoRepository.save(existingCargo);
     }
 
     public void deleteCargo(String cargoId) {
-        cargoRepository.deleteById(cargoId);
+        Cargo cargo = cargoRepository.findById(cargoId)
+            .orElseThrow(() -> new RuntimeException("貨物が見つかりません: " + cargoId));
+        cargoRepository.delete(cargo);
     }
 
-    public List<Cargo> getCargoByStatus(Cargo.CargoStatus status) {
-        return cargoRepository.findByStatus(status);
+    public Cargo updateCargoStatus(String cargoId, String status) {
+        Cargo cargo = cargoRepository.findById(cargoId)
+            .orElseThrow(() -> new RuntimeException("貨物が見つかりません: " + cargoId));
+
+        cargo.setStatus(status);
+        cargo.setUpdatedDate(LocalDateTime.now());
+
+        return cargoRepository.save(cargo);
     }
 
-    public List<Cargo> getCargoByFlightNumber(String flightNumber) {
-        return cargoRepository.findByFlightNumber(flightNumber);
-    }
-
-    // 入荷関連の操作
-    public List<Inbound> getAllInbound() {
+    // Inbound関連
+    public List<Inbound> getAllInbounds() {
         return inboundRepository.findAll();
     }
 
@@ -86,34 +108,31 @@ public class CargoService {
         return inboundRepository.findById(inboundId);
     }
 
+    public List<Inbound> getInboundsByCargoId(String cargoId) {
+        return inboundRepository.findByCargoId(cargoId);
+    }
+
     public Inbound createInbound(Inbound inbound) {
-        if (inbound.getInboundId() == null || inbound.getInboundId().isEmpty()) {
-            inbound.setInboundId("IN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
+        String inboundId = "IN" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        inbound.setInboundId(inboundId);
+        inbound.setStatus("ARRIVED");
         inbound.setCreatedDate(LocalDateTime.now());
-        
-        // 貨物のステータスを更新
-        cargoRepository.findById(inbound.getCargoId())
-                .ifPresent(cargo -> {
-                    cargo.setStatus(Cargo.CargoStatus.ARRIVED);
-                    cargo.setUpdatedDate(LocalDateTime.now());
-                    cargoRepository.save(cargo);
-                });
-        
+        inbound.setVersion(1);
+
         return inboundRepository.save(inbound);
     }
 
-    public Inbound updateInboundStatus(String inboundId, Inbound.InboundStatus status) {
-        return inboundRepository.findById(inboundId)
-                .map(inbound -> {
-                    inbound.setStatus(status);
-                    return inboundRepository.save(inbound);
-                })
-                .orElseThrow(() -> new RuntimeException("入荷記録が見つかりません: " + inboundId));
+    public Inbound updateInboundStatus(String inboundId, String status) {
+        Inbound inbound = inboundRepository.findById(inboundId)
+            .orElseThrow(() -> new RuntimeException("入荷記録が見つかりません: " + inboundId));
+
+        inbound.setStatus(status);
+
+        return inboundRepository.save(inbound);
     }
 
-    // 出荷関連の操作
-    public List<Outbound> getAllOutbound() {
+    // Outbound関連
+    public List<Outbound> getAllOutbounds() {
         return outboundRepository.findAll();
     }
 
@@ -121,57 +140,52 @@ public class CargoService {
         return outboundRepository.findById(outboundId);
     }
 
+    public List<Outbound> getOutboundsByCargoId(String cargoId) {
+        return outboundRepository.findByCargoId(cargoId);
+    }
+
     public Outbound createOutbound(Outbound outbound) {
-        if (outbound.getOutboundId() == null || outbound.getOutboundId().isEmpty()) {
-            outbound.setOutboundId("OUT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
+        String outboundId = "OUT" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        outbound.setOutboundId(outboundId);
+        outbound.setStatus("SCHEDULED");
         outbound.setCreatedDate(LocalDateTime.now());
-        
-        // 貨物のステータスを更新
-        cargoRepository.findById(outbound.getCargoId())
-                .ifPresent(cargo -> {
-                    cargo.setStatus(Cargo.CargoStatus.IN_TRANSIT);
-                    cargo.setUpdatedDate(LocalDateTime.now());
-                    cargoRepository.save(cargo);
-                });
-        
+        outbound.setVersion(1);
+
         return outboundRepository.save(outbound);
     }
 
-    public Outbound updateOutboundStatus(String outboundId, Outbound.OutboundStatus status) {
-        return outboundRepository.findById(outboundId)
-                .map(outbound -> {
-                    outbound.setStatus(status);
-                    return outboundRepository.save(outbound);
-                })
-                .orElseThrow(() -> new RuntimeException("出荷記録が見つかりません: " + outboundId));
+    public Outbound updateOutboundStatus(String outboundId, String status) {
+        Outbound outbound = outboundRepository.findById(outboundId)
+            .orElseThrow(() -> new RuntimeException("出荷記録が見つかりません: " + outboundId));
+
+        outbound.setStatus(status);
+
+        return outboundRepository.save(outbound);
     }
 
-    // 追跡関連の操作
-    public List<Tracking> getTrackingByCargoId(String cargoId) {
+    // Tracking関連
+    public List<Tracking> getAllTrackings() {
+        return trackingRepository.findAll();
+    }
+
+    public Optional<Tracking> getTrackingById(String trackingId) {
+        return trackingRepository.findById(trackingId);
+    }
+
+    public List<Tracking> getTrackingsByCargoId(String cargoId) {
         return trackingRepository.findByCargoIdOrderByTimestampDesc(cargoId);
     }
 
     public Tracking createTracking(Tracking tracking) {
-        if (tracking.getTrackingId() == null || tracking.getTrackingId().isEmpty()) {
-            tracking.setTrackingId("TRK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
+        String trackingId = "TR" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        tracking.setTrackingId(trackingId);
         tracking.setTimestamp(LocalDateTime.now());
+        tracking.setVersion(1);
+
         return trackingRepository.save(tracking);
     }
 
-    // 統計情報
-    public long getCargoCountByStatus(Cargo.CargoStatus status) {
-        return cargoRepository.countByStatus(status);
-    }
-
-    public List<Cargo> searchCargo(String keyword) {
-        // 貨物ID、フライト番号、荷送人名、荷受人名で検索
-        List<Cargo> results = cargoRepository.findByShipperNameContaining(keyword);
-        results.addAll(cargoRepository.findByConsigneeNameContaining(keyword));
-        results.addAll(cargoRepository.findByFlightNumber(keyword));
-        
-        // 重複を除去
-        return results.stream().distinct().toList();
+    public List<Tracking> getTrackingHistory(String cargoId) {
+        return trackingRepository.findByCargoIdOrderByTimestampDesc(cargoId);
     }
 } 

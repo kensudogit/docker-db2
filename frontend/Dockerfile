@@ -1,23 +1,15 @@
-FROM node:18-alpine AS base
-
-# 依存関係のインストール
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+FROM node:18-alpine AS deps
 WORKDIR /app
-
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# アプリケーションのビルド
-FROM base AS builder
+FROM node:18-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 RUN npm run build
 
-# 本番環境用のイメージを作成
-FROM base AS runner
+FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -26,9 +18,6 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
-
-# 自動的に利用可能な出力トラッキングを設定
-# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 

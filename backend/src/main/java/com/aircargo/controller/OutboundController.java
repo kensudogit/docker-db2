@@ -2,59 +2,52 @@ package com.aircargo.controller;
 
 import com.aircargo.entity.Outbound;
 import com.aircargo.service.CargoService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/outbound")
+@RequestMapping("/api/outbound")
 @RequiredArgsConstructor
-@Slf4j
-@Tag(name = "出荷管理", description = "出荷のCRUD操作")
 @CrossOrigin(origins = "*")
 public class OutboundController {
 
     private final CargoService cargoService;
 
     @GetMapping
-    @Operation(summary = "全出荷取得", description = "全ての出荷情報を取得します")
-    public ResponseEntity<List<Outbound>> getAllOutbound() {
-        List<Outbound> outboundList = cargoService.getAllOutbound();
-        return ResponseEntity.ok(outboundList);
+    public ResponseEntity<List<Outbound>> getAllOutbounds() {
+        List<Outbound> outbounds = cargoService.getAllOutbounds();
+        return ResponseEntity.ok(outbounds);
     }
 
     @GetMapping("/{outboundId}")
-    @Operation(summary = "出荷詳細取得", description = "指定された出荷IDの詳細情報を取得します")
     public ResponseEntity<Outbound> getOutboundById(@PathVariable String outboundId) {
-        Optional<Outbound> outbound = cargoService.getOutboundById(outboundId);
-        return outbound.map(ResponseEntity::ok)
+        return cargoService.getOutboundById(outboundId)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    @Operation(summary = "出荷作成", description = "新しい出荷を登録します")
-    public ResponseEntity<Outbound> createOutbound(@Valid @RequestBody Outbound outbound) {
+    public ResponseEntity<Outbound> createOutbound(@RequestBody Outbound outbound) {
         Outbound createdOutbound = cargoService.createOutbound(outbound);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdOutbound);
+        return ResponseEntity.ok(createdOutbound);
     }
 
     @PutMapping("/{outboundId}/status")
-    @Operation(summary = "出荷ステータス更新", description = "指定された出荷IDのステータスを更新します")
-    public ResponseEntity<Outbound> updateOutboundStatus(@PathVariable String outboundId, 
-                                                         @RequestParam Outbound.OutboundStatus status) {
+    public ResponseEntity<Outbound> updateOutboundStatus(@PathVariable String outboundId, @RequestParam String status) {
         try {
             Outbound updatedOutbound = cargoService.updateOutboundStatus(outboundId, status);
             return ResponseEntity.ok(updatedOutbound);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/cargo/{cargoId}")
+    public ResponseEntity<List<Outbound>> getOutboundsByCargoId(@PathVariable String cargoId) {
+        List<Outbound> outbounds = cargoService.getOutboundsByCargoId(cargoId);
+        return ResponseEntity.ok(outbounds);
     }
 } 

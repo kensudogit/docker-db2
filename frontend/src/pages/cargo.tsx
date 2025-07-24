@@ -21,7 +21,6 @@ import {
   Toolbar,
   IconButton,
 } from '@mui/material';
-import { Add, Edit, Delete, Search, ArrowBack } from '@mui/icons-material';
 import { useRouter } from 'next/router';
 
 interface Cargo {
@@ -68,20 +67,11 @@ export default function CargoPage() {
     'その他',
   ];
 
-  const statuses = [
-    'PENDING',
-    'IN_TRANSIT',
-    'ARRIVED',
-    'DELIVERED',
-    'CANCELLED',
-  ];
-
   const airports = [
     'NRT', 'HND', 'LAX', 'JFK', 'LHR', 'CDG',
   ];
 
   useEffect(() => {
-    // 実際のAPI呼び出しに置き換える
     fetchCargos();
   }, []);
 
@@ -188,7 +178,7 @@ export default function CargoPage() {
             onClick={() => router.push('/')}
             sx={{ mr: 2 }}
           >
-            <ArrowBack />
+            ←
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             貨物管理
@@ -203,7 +193,6 @@ export default function CargoPage() {
           </Typography>
           <Button
             variant="contained"
-            startIcon={<Add />}
             onClick={() => {
               setEditingCargo(null);
               resetForm();
@@ -221,9 +210,6 @@ export default function CargoPage() {
             placeholder="貨物ID、フライト番号、荷送人名、荷受人名で検索..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-            }}
           />
         </Box>
 
@@ -262,13 +248,13 @@ export default function CargoPage() {
                       size="small"
                       onClick={() => handleEdit(cargo)}
                     >
-                      <Edit />
+                      編集
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleDelete(cargo.cargoId)}
                     >
-                      <Delete />
+                      削除
                     </IconButton>
                   </TableCell>
                 </TableRow>

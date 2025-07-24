@@ -11,16 +11,8 @@ import java.util.List;
 public interface InboundRepository extends JpaRepository<Inbound, String> {
 
     List<Inbound> findByCargoId(String cargoId);
-    
-    List<Inbound> findByFlightNumber(String flightNumber);
-    
-    List<Inbound> findByStatus(Inbound.InboundStatus status);
-    
+
     List<Inbound> findByArrivalDate(LocalDate arrivalDate);
-    
-    List<Inbound> findByArrivalDateBetween(LocalDate startDate, LocalDate endDate);
-    
-    List<Inbound> findByHandlerId(String handlerId);
-    
-    List<Inbound> findByTerminal(String terminal);
+
+    List<Inbound> findByStatus(String status);
 } 

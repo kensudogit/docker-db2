@@ -1,89 +1,66 @@
 version: '3.8'
 
 services:
-  # DB2 データベース
   db2:
     image: ibmcom/db2:11.5.7.0
     container_name: air-cargo-db2
     environment:
-      - DB2INST1_PASSWORD=db2inst1
-      - DBNAME=AIRCARGO
       - LICENSE=accept
+      - DB2INST1_PASSWORD=password
+      - DB2_DEV=true
+      - DB2ENABLE_CDC=true
+      - DBNAME=AIRCARGO
       - PERSISTENT_HOME=true
+      - ENABLE_ORACLE_COMPATIBILITY=false
     ports:
       - "50000:50000"
     volumes:
       - db2_data:/database
-      - ./database/init:/var/custom
-    networks:
-      - air-cargo-network
+      - ./database/init:/var/custom/init
+    command: bash -c "if [ ! -f /database/.initialized ]; then /var/db2_setup/lib/setup_db2.sh && touch /database/.initialized; fi && /var/db2_setup/lib/start_db2.sh"
+    # healthcheck:
+    #   test: ["CMD", "db2", "connect", "to", "AIRCARGO", "user", "db2inst1", "using", "password"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 300s
 
-  # WebSphere Application Server
-  websphere:
-    image: ibmcom/websphere-traditional:9.0.5.11
-    container_name: air-cargo-websphere
-    environment:
-      - PROFILE_NAME=AppSrv01
-      - CELL_NAME=DefaultCell01
-      - NODE_NAME=DefaultNode01
-      - SERVER_NAME=server1
-      - ADMIN_USER_NAME=wsadmin
-      - ADMIN_PASSWORD=wsadmin123
-    ports:
-      - "9043:9043"
-      - "9080:9080"
-      - "9443:9443"
-    volumes:
-      - websphere_data:/opt/IBM/WebSphere/AppServer/profiles
-      - ./backend/target:/opt/IBM/WebSphere/AppServer/profiles/AppSrv01/installedApps
-    depends_on:
-      - db2
-    networks:
-      - air-cargo-network
-
-  # Spring Boot バックエンド
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: docker-db2-backend:latest
     container_name: air-cargo-backend
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - DB2_HOST=db2
-      - DB2_PORT=50000
-      - DB2_DATABASE=AIRCARGO
-      - DB2_USER=db2inst1
-      - DB2_PASSWORD=db2inst1
+      - SPRING_DATASOURCE_URL=jdbc:db2://db2:50000/AIRCARGO
+      - SPRING_DATASOURCE_USERNAME=db2inst1
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.ibm.db2.jcc.DB2Driver
+      - JAVA_OPTS=-Xmx512m -Xms256m
     ports:
       - "8080:8080"
     depends_on:
       - db2
-    networks:
-      - air-cargo-network
-    volumes:
-      - ./backend/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  # React Next.js フロントエンド
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: docker-db2-frontend:latest
     container_name: air-cargo-frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    networks:
-      - air-cargo-network
-    volumes:
-      - ./frontend/.next:/app/.next
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
-  db2_data:
-  websphere_data:
-
-networks:
-  air-cargo-network:
-    driver: bridge 
+  db2_data: 

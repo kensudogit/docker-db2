@@ -1,0 +1,11 @@
+SELECT
+    TRACKING_ID,
+    CARGO_ID,
+    LOCATION,
+    STATUS,
+    TIMESTAMP,
+    HANDLER_ID,
+    NOTES,
+    VERSION
+FROM TRACKING
+WHERE TRACKING_ID = /* trackingId */'' 

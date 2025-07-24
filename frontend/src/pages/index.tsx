@@ -11,12 +11,6 @@ import {
   AppBar,
   Toolbar,
 } from '@mui/material';
-import {
-  Flight,
-  LocalShipping,
-  Timeline,
-  Dashboard,
-} from '@mui/icons-material';
 import { useRouter } from 'next/router';
 
 export default function Home() {
@@ -26,35 +20,35 @@ export default function Home() {
     {
       title: '貨物管理',
       description: '貨物の登録、編集、削除を行います',
-      icon: <Flight sx={{ fontSize: 40 }} />,
+      icon: '✈️',
       path: '/cargo',
       color: '#1976d2',
     },
     {
       title: '入荷管理',
       description: '入荷の登録とステータス管理を行います',
-      icon: <LocalShipping sx={{ fontSize: 40 }} />,
+      icon: '📦',
       path: '/inbound',
       color: '#2e7d32',
     },
     {
       title: '出荷管理',
       description: '出荷の登録とステータス管理を行います',
-      icon: <LocalShipping sx={{ fontSize: 40 }} />,
+      icon: '🚚',
       path: '/outbound',
       color: '#ed6c02',
     },
     {
       title: '追跡管理',
       description: '貨物の追跡情報を管理します',
-      icon: <Timeline sx={{ fontSize: 40 }} />,
+      icon: '📍',
       path: '/tracking',
       color: '#9c27b0',
     },
     {
       title: 'ダッシュボード',
       description: 'システム全体の統計情報を表示します',
-      icon: <Dashboard sx={{ fontSize: 40 }} />,
+      icon: '📊',
       path: '/dashboard',
       color: '#d32f2f',
     },
@@ -64,7 +58,6 @@ export default function Home() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
-          <Flight sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             航空貨物ロジステックシステム
           </Typography>
@@ -95,7 +88,7 @@ export default function Home() {
                 }}
               >
                 <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                  <Box sx={{ color: item.color, mb: 2 }}>
+                  <Box sx={{ color: item.color, mb: 2, fontSize: '3rem' }}>
                     {item.icon}
                   </Box>
                   <Typography gutterBottom variant="h5" component="h2">
