@@ -1,0 +1,41 @@
+# テスト用のアプリケーション設定ファイル
+# H2インメモリデータベースを使用してテストを実行します
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  
+  # JPA監査機能の設定
+  data:
+    jpa:
+      auditing:
+        enabled: true
+
+# ログレベルの設定
+logging:
+  level:
+    com.aircargo: DEBUG
+    org.springframework.data.jpa: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# テスト用のサーバー設定
+server:
+  port: 0  # ランダムポートを使用 
